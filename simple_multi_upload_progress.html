@@ -76,7 +76,7 @@
         clsUpload = function () {
         }
 
-        clsUpload.url_server = '/train/upload-progress/2020/multi_server_side.php/multi_server_side.php';
+        clsUpload.url_server = '/train/upload-progress/2020/server_side.php';
         clsUpload.upload_queue = 0;
         clsUpload.uploading = 0;
         clsUpload.upload_done = 0;
@@ -86,8 +86,6 @@
         clsUpload.mFileUpload = [];
 
         $(document).ready(function () {
-
-
             clsUpload.preventDefaults = function (e) {
                 e.preventDefault()
                 e.stopPropagation()
