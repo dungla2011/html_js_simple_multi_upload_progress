@@ -77,18 +77,21 @@
             else return (bytes / gigaBytes).toFixed(decimal) + " GB";
         }
 
+        clsUpload = function () {
+        }
+
+        clsUpload.url_server  = '/train/upload-progress/2020/multi_server_side.php/multi_server_side.php';
+        clsUpload.upload_queue = 0;
+        clsUpload.uploading = 0;
+        clsUpload.upload_done = 0;
+        clsUpload.upload_total = 0;
+        clsUpload.upload_error = 0;
+        clsUpload.maxFileCC = 2;
+        clsUpload.mFileUpload = [];
+
         $(document).ready(function () {
 
-            clsUpload = function () {
-            }
 
-            clsUpload.upload_queue = 0;
-            clsUpload.uploading = 0;
-            clsUpload.upload_done = 0;
-            clsUpload.upload_total = 0;
-            clsUpload.upload_error = 0;
-            clsUpload.maxFileCC = 2;
-            clsUpload.mFileUpload = [];
 
             clsUpload.preventDefaults = function (e) {
                 e.preventDefault()
@@ -167,18 +170,11 @@
 
                 console.log(" Continue upload : ", file.upload_id_lad, " = ", file);
 
-                var url = '/train/upload-progress/2020/multi_server_side.php/multi_server_side.php'
+                var url = clsUpload.url_server;
                 var xhr = new XMLHttpRequest()
-                //xhr.stop_upload_lad = 0;
 
                 file.xhrLad = xhr;
 
-                //mXhr.push(xhr);
-                //mXhr[countXhr] = xhr;
-                //xhr.uploadIdLad = countXhr;
-                //countXhr++;
-
-                //var i = countXhr - 1;
                 var i = file.upload_id_lad;
 
                 console.log("Upload now: ", file);
@@ -200,7 +196,6 @@
                 xhr.addEventListener('readystatechange', function (e) {
                     if (xhr.readyState == 4 && xhr.status == 200) {
                         clsUpload.updateProgress(i, 100) // <- Add this
-                        //xhr.stop_upload_lad = 2;
                         file.upload_status_lad = 'done';
                         $("#div_upload_status_one_" + file.upload_id_lad).remove();
                         clsUpload.showStatusUpload();
@@ -214,10 +209,8 @@
                     } else if (xhr.readyState == 4 && xhr.status != 200) {
                         // Error. Inform the user
                         clsUpload.showStatusUpload();
-
                         console.log(" Error ? uploadIdLad = ", xhr.uploadIdLad);
                         console.log(" server return: ", xhr.response);
-                        //xhr.stop_upload_lad = 1;
                         file.upload_status_lad = 'error';
                         clsUpload.upload_error++;
 
@@ -255,7 +248,7 @@
                     '<button title="cancel upload" id="cancel_upload_' + i + '" style="margin-top: 5px; font-size: smaller; border-radius: 5px"> Cancel </button> <progress class="progress_bar" id="progress_bar' + i + '" max=100 value=0></progress> <span id="percent_upload_' + i + '"> ... </span> </div>');
                 clsUpload.showStatusUpload();
 
-                //Upload afer add file:
+                //Excute Upload right after add files, or add a button to start upload with this command:
                 clsUpload.excuteUploadFile()
             }
 
@@ -281,14 +274,11 @@
             // Handle dropped files
             dropAreaUpload.addEventListener('drop', clsUpload.handleDrop, false)
 
-
             $(document).on('click', "[id^=cancel_upload_]", function () {
                 var id = this.id.replace('cancel_upload_', '')
                 console.log(" cancel_upload_ id = " + id);
                 //Stop Upload:
-                //mXhr[id].abort();
                 clsUpload.mFileUpload[id].xhrLad.abort();
-                //mXhr[id].stop_upload_lad = 1;
                 $("#div_upload_status_one_" + id).remove();
                 clsUpload.showStatusUpload();
             })
@@ -301,7 +291,7 @@
 
 <div id="drop-area-upload">
     <form class="my-form">
-        <p style="float: right; font-style: italic"><span style="font-size: smaller" id="upload_info"> </span></p>
+        <span style="float: right; font-style: italic"><span style="font-size: small" id="upload_info"> </span></span>
 
         <input type="file" id="fileElem" multiple accept="image/*" onchange="clsUpload.handleFiles(this.files)">
         <label class="button" for="fileElem">Select or drag files here</label>
@@ -314,6 +304,7 @@
 </div>
 <div id="result-area-upload">
 </div>
+
 <!--<button onclick="clsUpload.excuteUploadFile()"> Start </button>-->
 
 </body>
