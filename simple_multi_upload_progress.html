@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <script src="/public/js/jquery.js" type="text/javascript"></script>
+    <style>
+
+        #result-area-upload {
+
+        }
+
+        #drop-area-upload, #result-area-upload {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            max-width: 400px;
+            /*drop-area-upload*/
+            padding: 10px;
+            background-color: lavender;
+            font-size: smaller;
+            margin-bottom: 10px;
+        }
+
+        #result-area-upload {
+            border: 1px dashed #ccc;
+            background-color: white;
+        }
+
+        #drop-area-upload.highlight {
+            border-color: purple;
+        }
+
+        #drop-area-upload.unhighlight {
+            border-color: #ccc;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #ccc;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .button:hover {
+            background: #ddd;
+        }
+
+        #fileElem {
+            display: none;
+        }
+
+        .progress_bar {
+            height: 5px;
+        }
+
+    </style>
+
+
+    <script>
+
+        function byteSize(bytes) {
+            var marker = 1024; // Change to 1000 if required
+            var decimal = 3; // Change as required
+            var kiloBytes = marker; // One Kilobyte is 1024 bytes
+            var megaBytes = marker * marker; // One MB is 1024 KB
+            var gigaBytes = marker * marker * marker; // One GB is 1024 MB
+            var teraBytes = marker * marker * marker * marker; // One TB is 1024 GB
+
+            // return bytes if less than a KB
+            if (bytes < kiloBytes) return bytes + " Bytes";
+            // return KB if less than a MB
+            else if (bytes < megaBytes) return (bytes / kiloBytes).toFixed(decimal) + " KB";
+            // return MB if less than a GB
+            else if (bytes < gigaBytes) return (bytes / megaBytes).toFixed(decimal) + " MB";
+            // return GB if less than a TB
+            else return (bytes / gigaBytes).toFixed(decimal) + " GB";
+        }
+
+        $(document).ready(function () {
+
+            clsUpload = function () {
+            }
+
+            clsUpload.upload_queue = 0;
+            clsUpload.uploading = 0;
+            clsUpload.upload_done = 0;
+            clsUpload.upload_total = 0;
+            clsUpload.upload_error = 0;
+            clsUpload.maxFileCC = 2;
+            clsUpload.mFileUpload = [];
+
+            clsUpload.preventDefaults = function (e) {
+                e.preventDefault()
+                e.stopPropagation()
+            }
+
+            clsUpload.highlight = function (e) {
+                dropAreaUpload.classList.add('highlight')
+            }
+
+            clsUpload.unhighlight = function (e) {
+                dropAreaUpload.classList.remove('active')
+            }
+
+            clsUpload.handleDrop = function (e) {
+                var dt = e.dataTransfer
+                var files = dt.files
+
+                console.log(" FIles : " + files);
+
+                clsUpload.handleFiles(files)
+            }
+
+            clsUpload.updateProgress = function (fileNumber, percent, loaded) {
+                let progressBarI = document.getElementById('progress_bar' + fileNumber);
+                progressBarI.value = percent;
+                var speedAll = (loaded / (Date.now() - clsUpload.mFileUpload[fileNumber].startTimeUploadLad) / 1000).toFixed(2);
+                var speed = ((loaded - clsUpload.mFileUpload[fileNumber].lastByteUploadLad) / (Date.now() - clsUpload.mFileUpload[fileNumber].lastTimeUploadLad) / 1000).toFixed(2);
+                if (isNaN(speed)) {
+                    return;
+                }
+                clsUpload.mFileUpload[fileNumber].lastTimeUploadLad = Date.now();
+                clsUpload.mFileUpload[fileNumber].lastByteUploadLad = loaded;
+                document.getElementById('percent_upload_' + fileNumber).innerText = percent.toFixed(2) + " % (" + speed + " MB/s)";
+            }
+
+            clsUpload.handleFiles = function (files) {
+                files = [...files]
+                console.log(" handleFiles files : ", files);
+                //initializeProgress(files.length)
+                files.forEach(clsUpload.addFileToUpload)
+                //files.forEach(previewFile)
+            }
+
+            clsUpload.countUploadInfo = function () {
+                var ret = 0;
+                clsUpload.upload_queue = 0;
+                clsUpload.uploading = 0;
+                clsUpload.upload_done = 0;
+                clsUpload.upload_total = 0;
+
+                for (var i = 0; i < clsUpload.mFileUpload.length; i++) {
+                    if (clsUpload.mFileUpload[i].upload_status_lad == 'doing')
+                        clsUpload.uploading++;
+                    if (clsUpload.mFileUpload[i].upload_status_lad == 0)
+                        clsUpload.upload_queue++;
+                    if (clsUpload.mFileUpload[i].upload_status_lad == 'error')
+                        clsUpload.upload_error++;
+                    if (clsUpload.mFileUpload[i].upload_status_lad == 'done')
+                        clsUpload.upload_done++;
+                }
+
+                return clsUpload.uploading;
+            }
+
+            clsUpload.showStatusUpload = function () {
+                $("#upload_info").html("Doing: " + clsUpload.countUploadInfo() + ", done: " + clsUpload.upload_done + ', queue: ' + clsUpload.upload_queue + '');
+            }
+
+            clsUpload.startUploadOne = function (file) {
+
+                file.upload_status_lad = 'doing';
+                file.startTimeUploadLad = Date.now();
+                file.lastTimeUploadLad = Date.now();
+                file.lastByteUploadLad = 0;
+
+                console.log(" Continue upload : ", file.upload_id_lad, " = ", file);
+
+                var url = '/train/upload-progress/2020/multi_server_side.php/multi_server_side.php'
+                var xhr = new XMLHttpRequest()
+                //xhr.stop_upload_lad = 0;
+
+                file.xhrLad = xhr;
+
+                //mXhr.push(xhr);
+                //mXhr[countXhr] = xhr;
+                //xhr.uploadIdLad = countXhr;
+                //countXhr++;
+
+                //var i = countXhr - 1;
+                var i = file.upload_id_lad;
+
+                console.log("Upload now: ", file);
+
+                console.log("countFile = " + i);
+
+                clsUpload.showStatusUpload();
+
+                var formData = new FormData()
+                xhr.open('POST', url, true)
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
+
+                // Update progress (can be used to show progress indicator)
+                xhr.upload.addEventListener("progress", function (e) {
+                    //console.log("addEventListener Update progressI: " , i);
+                    clsUpload.updateProgress(i, (e.loaded * 100.0 / e.total) || 100, e.loaded)
+                })
+
+                xhr.addEventListener('readystatechange', function (e) {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        clsUpload.updateProgress(i, 100) // <- Add this
+                        //xhr.stop_upload_lad = 2;
+                        file.upload_status_lad = 'done';
+                        $("#div_upload_status_one_" + file.upload_id_lad).remove();
+                        clsUpload.showStatusUpload();
+                        console.log(" DONE ? uploadIdLad = ", file.upload_id_lad);
+                        console.log(" server return: ", xhr.response);
+
+                        $("#result-area-upload").prepend(xhr.response + "<br>")
+
+                        clsUpload.upload_done++;
+                        clsUpload.excuteUploadFile();
+                    } else if (xhr.readyState == 4 && xhr.status != 200) {
+                        // Error. Inform the user
+                        clsUpload.showStatusUpload();
+
+                        console.log(" Error ? uploadIdLad = ", xhr.uploadIdLad);
+                        console.log(" server return: ", xhr.response);
+                        //xhr.stop_upload_lad = 1;
+                        file.upload_status_lad = 'error';
+                        clsUpload.upload_error++;
+
+                        clsUpload.excuteUploadFile();
+                    }
+                })
+
+                formData.append('upload_preset', 'ujpu6gyk')
+                formData.append('file', file)
+
+                xhr.send(formData)
+            }
+
+            clsUpload.excuteUploadFile = function () {
+                for (var k = 0; k < clsUpload.mFileUpload.length; k++) {
+                    if (clsUpload.mFileUpload[k].upload_status_lad == 0) {
+                        if (clsUpload.countUploadInfo() >= clsUpload.maxFileCC) {
+                            console.log(" Number thread ", clsUpload.maxFileCC, " ...");
+                            return;
+                        }
+                        var file = clsUpload.mFileUpload[k];
+                        clsUpload.startUploadOne(file);
+                    }
+                }
+            }
+
+            clsUpload.addFileToUpload = function (file, i) {
+
+                file.upload_status_lad = 0;
+                file.upload_id_lad = clsUpload.mFileUpload.length;
+                clsUpload.mFileUpload.push(file);
+                clsUpload.upload_total++;
+                var i = file.upload_id_lad;
+                document.getElementById('div_upload_status_all').insertAdjacentHTML('beforeend', '<div style="margin-bottom:5px; background-color: snow; padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px" id="div_upload_status_one_' + i + '"> ' + file.name + ' (' + byteSize(file.size) + ') <br/> ' +
+                    '<button title="cancel upload" id="cancel_upload_' + i + '" style="margin-top: 5px; font-size: smaller; border-radius: 5px"> Cancel </button> <progress class="progress_bar" id="progress_bar' + i + '" max=100 value=0></progress> <span id="percent_upload_' + i + '"> ... </span> </div>');
+                clsUpload.showStatusUpload();
+
+                //Upload afer add file:
+                clsUpload.excuteUploadFile()
+            }
+
+            // ************************ Drag and drop ***************** //
+            let dropAreaUpload = document.getElementById("drop-area-upload")
+
+// Prevent default drag behaviors
+            ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropAreaUpload.addEventListener(eventName, clsUpload.preventDefaults, false)
+                document.body.addEventListener(eventName, clsUpload.preventDefaults, false)
+            })
+
+// Highlight drop area when item is dragged over it
+            ;['dragenter', 'dragover'].forEach(eventName => {
+                dropAreaUpload.addEventListener(eventName, clsUpload.highlight, false)
+            })
+
+            ;['dragleave', 'drop'].forEach(eventName => {
+                dropAreaUpload.addEventListener(eventName, clsUpload.unhighlight, false)
+            })
+
+
+            // Handle dropped files
+            dropAreaUpload.addEventListener('drop', clsUpload.handleDrop, false)
+
+
+            $(document).on('click', "[id^=cancel_upload_]", function () {
+                var id = this.id.replace('cancel_upload_', '')
+                console.log(" cancel_upload_ id = " + id);
+                //Stop Upload:
+                //mXhr[id].abort();
+                clsUpload.mFileUpload[id].xhrLad.abort();
+                //mXhr[id].stop_upload_lad = 1;
+                $("#div_upload_status_one_" + id).remove();
+                clsUpload.showStatusUpload();
+            })
+        });
+
+
+    </script>
+</head>
+<body>
+
+<div id="drop-area-upload">
+    <form class="my-form">
+        <p style="float: right; font-style: italic"><span style="font-size: smaller" id="upload_info"> </span></p>
+
+        <input type="file" id="fileElem" multiple accept="image/*" onchange="clsUpload.handleFiles(this.files)">
+        <label class="button" for="fileElem">Select or drag files here</label>
+    </form>
+
+    <br>
+    <div id="div_upload_status_all">
+
+    </div>
+</div>
+<div id="result-area-upload">
+</div>
+<!--<button onclick="clsUpload.excuteUploadFile()"> Start </button>-->
+
+</body>
+</html>
