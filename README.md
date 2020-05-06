@@ -1,6 +1,7 @@
 Very simple upload progress js/jquery
 
 - Limit number concurrent upload 
+- Limit filesize, filetype...
 - Cancel uploading
 - Drag, Drop file
 
