@@ -124,6 +124,9 @@
             clsUpload.handleFiles = function (files) {
                 files = [...files]
                 console.log(" handleFiles files : ", files);
+                
+                //Get file size, filetype: to limit size, filetype here 
+                
                 //initializeProgress(files.length)
                 files.forEach(clsUpload.addFileToUpload)
                 //files.forEach(previewFile)
