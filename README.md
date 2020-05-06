@@ -1,6 +1,4 @@
-Very simple upload progress js/jquery
-
-Server site: any language (php, .net...)
+Very simple upload progress js/jquery (Server site: any language, php, .net...)
 
 - Limit number concurrent upload 
 - Limit filesize, filetype...
